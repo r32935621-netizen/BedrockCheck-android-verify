@@ -1,0 +1,1892 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none';">
+  <meta name="color-scheme" content="dark">
+  <title>BedrockCheck Android — Проверка подписи отчёта</title>
+  <style>
+    :root {
+      --bg-page: #14100d;
+      --bg-surface: #1d1713;
+      --bg-surface-alt: #251d18;
+      --bg-input: #110d0b;
+      --border: #3a2e25;
+      --border-strong: #544234;
+      --text-main: #f4ece3;
+      --text-muted: #bcae9f;
+      --text-dim: #8a7b6e;
+      --accent: #e59a42;
+      --accent-hover: #f0ab58;
+      --accent-soft: rgba(229, 154, 66, 0.14);
+      --sand: #d8be98;
+      --ok-bg: rgba(107, 174, 113, 0.14);
+      --ok-border: #4d8a53;
+      --ok-text: #a5dfaa;
+      --warn-bg: rgba(229, 154, 66, 0.14);
+      --warn-border: #c27c2c;
+      --warn-text: #f6c98e;
+      --err-bg: rgba(208, 86, 66, 0.16);
+      --err-border: #b84a39;
+      --err-text: #f5aba0;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-page);
+      background-image:
+        radial-gradient(900px 420px at 15% -10%, rgba(229, 154, 66, 0.08), transparent 60%),
+        radial-gradient(700px 380px at 90% 0%, rgba(196, 98, 60, 0.07), transparent 60%);
+      color: var(--text-main);
+      font-family: var(--sans);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1020px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: linear-gradient(145deg, #34251a, #211711);
+      border: 1px solid var(--border-strong);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      color: var(--accent);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .subtitle {
+      margin: 2px 0 0;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-strong);
+      color: var(--sand);
+      white-space: nowrap;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .card-title {
+      margin: 0 0 12px;
+      font-size: 1.02rem;
+      font-weight: 650;
+      color: var(--sand);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .notice {
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-strong);
+      background: var(--bg-surface-alt);
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+    }
+
+    .notice.warn {
+      background: var(--warn-bg);
+      border-color: var(--warn-border);
+      color: var(--warn-text);
+    }
+
+    .notice.err {
+      background: var(--err-bg);
+      border-color: var(--err-border);
+      color: var(--err-text);
+    }
+
+    .notice.ok {
+      background: var(--ok-bg);
+      border-color: var(--ok-border);
+      color: var(--ok-text);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    @media (min-width: 700px) {
+      .field-row.two-col {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    input[type="text"],
+    input[type="search"],
+    textarea {
+      width: 100%;
+      background: var(--bg-input);
+      color: var(--text-main);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-family: var(--mono);
+      font-size: 0.86rem;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input[type="text"]:focus,
+    input[type="search"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    textarea {
+      min-height: 165px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .dropzone {
+      border: 1.5px dashed var(--border-strong);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      background: rgba(17, 13, 11, 0.55);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .dropzone.drag-over {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .dropzone-info {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .dropzone-info strong {
+      color: var(--text-main);
+    }
+
+    .file-input-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button, .btn-fake {
+      appearance: none;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-surface-alt);
+      color: var(--text-main);
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-family: var(--sans);
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    button:hover, .btn-fake:hover {
+      background: #2f251e;
+      border-color: #6d5645;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #19120c;
+    }
+
+    button.primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .verdict-banner {
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 18px;
+      border: 1.5px solid var(--border);
+    }
+
+    .verdict-banner.valid {
+      background: var(--ok-bg);
+      border-color: var(--ok-border);
+    }
+
+    .verdict-banner.invalid {
+      background: var(--err-bg);
+      border-color: var(--err-border);
+    }
+
+    .verdict-banner.unavailable {
+      background: var(--warn-bg);
+      border-color: var(--warn-border);
+    }
+
+    .verdict-title {
+      margin: 0 0 6px;
+      font-size: 1.22rem;
+      font-weight: 750;
+      letter-spacing: 0.01em;
+    }
+
+    .verdict-banner.valid .verdict-title { color: var(--ok-text); }
+    .verdict-banner.invalid .verdict-title { color: var(--err-text); }
+    .verdict-banner.unavailable .verdict-title { color: var(--warn-text); }
+
+    .verdict-desc {
+      margin: 0;
+      font-size: 0.93rem;
+      color: var(--text-main);
+    }
+
+    .warnings-stack {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .warning-item {
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      background: rgba(20, 16, 13, 0.55);
+      border: 1px solid var(--warn-border);
+      color: var(--warn-text);
+      font-size: 0.87rem;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .meta-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+
+    .meta-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    .meta-value {
+      font-size: 0.96rem;
+      font-weight: 600;
+      color: var(--text-main);
+      word-break: break-word;
+    }
+
+    .meta-sub {
+      margin-top: 4px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      word-break: break-word;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 650;
+      border: 1px solid transparent;
+    }
+
+    .badge.ok {
+      background: var(--ok-bg);
+      border-color: var(--ok-border);
+      color: var(--ok-text);
+    }
+
+    .badge.warn {
+      background: var(--warn-bg);
+      border-color: var(--warn-border);
+      color: var(--warn-text);
+    }
+
+    .badge.err {
+      background: var(--err-bg);
+      border-color: var(--err-border);
+      color: var(--err-text);
+    }
+
+    .badge.neutral {
+      background: var(--bg-surface-alt);
+      border-color: var(--border-strong);
+      color: var(--sand);
+    }
+
+    .findings-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .findings-toolbar input[type="search"] {
+      flex: 1 1 260px;
+    }
+
+    .findings-count {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .finding-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .finding-item {
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+
+    .finding-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .finding-path {
+      font-family: var(--mono);
+      font-size: 0.84rem;
+      color: var(--accent);
+      word-break: break-all;
+      margin-bottom: 6px;
+    }
+
+    .finding-detail {
+      font-size: 0.88rem;
+      color: var(--text-main);
+      margin-bottom: 6px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .finding-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .kw-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .kw-tag {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-strong);
+      color: var(--sand);
+    }
+
+    details {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 18px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 650;
+      color: var(--sand);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    summary::after {
+      content: "▾";
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    details[open] summary::after {
+      content: "▴";
+    }
+
+    .details-body {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .kv-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+      font-size: 0.86rem;
+    }
+
+    .kv-table th,
+    .kv-table td {
+      text-align: left;
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    .kv-table th {
+      color: var(--text-muted);
+      font-weight: 600;
+      width: 34%;
+    }
+
+    .kv-table td {
+      font-family: var(--mono);
+      color: var(--text-main);
+      word-break: break-word;
+    }
+
+    .issue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .issue-item {
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border);
+    }
+
+    .issue-path {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--sand);
+      word-break: break-all;
+      margin-bottom: 3px;
+    }
+
+    .issue-msg {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      word-break: break-word;
+    }
+
+    .info-columns {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    @media (min-width: 760px) {
+      .info-columns {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .info-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .info-box h3 {
+      margin: 0 0 8px;
+      font-size: 0.96rem;
+      color: var(--sand);
+    }
+
+    .info-box ul {
+      margin: 6px 0 0;
+      padding-left: 18px;
+    }
+
+    .info-box li {
+      margin-bottom: 5px;
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.84em;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: var(--sand);
+    }
+
+    footer {
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.84rem;
+      color: var(--text-dim);
+    }
+
+    footer strong {
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <h1>BedrockCheck Android — Верификатор</h1>
+          <p class="subtitle">Локальная проверка криптографической подписи Ed25519 отчётов <code>report_android_*.json</code></p>
+        </div>
+      </div>
+      <span class="pill">100% локально · Web Crypto API</span>
+    </header>
+
+    <div id="env-warning" class="notice warn hidden"></div>
+    <div id="key-config-warning" class="notice warn hidden"></div>
+
+    <section class="card" aria-label="Загрузка отчёта">
+      <h2 class="card-title">
+        <span>1. Загрузите отчёт и укажите код проверки</span>
+        <span id="file-meta" class="findings-count"></span>
+      </h2>
+
+      <div id="dropzone" class="dropzone">
+        <div class="dropzone-info">
+          <strong>Перетащите файл отчёта сюда</strong> (<code>.json</code> или <code>.txt</code>, до 16 МиБ) или выберите с устройства. Файлы никуда не отправляются.
+        </div>
+        <label class="btn-fake file-input-wrap">
+          <span>Выбрать файл</span>
+          <input id="file-input" type="file" accept=".json,.txt,application/json,text/plain">
+        </label>
+      </div>
+
+      <div class="field-row">
+        <div>
+          <label for="challenge-input">Ожидаемый код проверки (<code>challenge</code>)</label>
+          <input id="challenge-input" type="text" placeholder="Например: A7K9-M2P4 (если указан — сверяется с отчётом)" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+
+      <div>
+        <label for="report-text">Содержимое JSON-отчёта</label>
+        <textarea id="report-text" placeholder='Вставьте сюда содержимое report_android_*.json ({ "format": "bedrock-check.ed25519.v1", ... })' spellcheck="false"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button id="verify-btn" class="primary" type="button">Проверить подпись</button>
+        <button id="clear-btn" type="button">Очистить</button>
+      </div>
+    </section>
+
+    <section id="result-section" class="hidden" aria-live="polite">
+      <div id="verdict-banner" class="verdict-banner">
+        <h2 id="verdict-title" class="verdict-title"></h2>
+        <p id="verdict-desc" class="verdict-desc"></p>
+        <div id="verdict-warnings" class="warnings-stack hidden"></div>
+      </div>
+
+      <div id="verified-content" class="hidden">
+        <div id="meta-grid" class="meta-grid"></div>
+
+        <section id="recent-changes-card" class="card hidden">
+          <h2 class="card-title">Недавние изменения (окно 15 минут)</h2>
+          <div id="recent-changes-body"></div>
+        </section>
+
+        <section class="card">
+          <h2 class="card-title">
+            <span>Индикаторы и находки (<code>findings</code>)</span>
+            <span id="findings-counter" class="findings-count"></span>
+          </h2>
+          <div class="findings-toolbar">
+            <input id="findings-search" type="search" placeholder="Поиск по пути, категории или ключевым словам...">
+          </div>
+          <div id="findings-list" class="finding-list"></div>
+          <div id="findings-pagination" class="btn-row hidden">
+            <button id="show-more-btn" type="button">Показать ещё 100</button>
+          </div>
+        </section>
+
+        <details id="scope-details">
+          <summary>Охват, статистика, ограничения (<code>issues</code>) и технические идентификаторы</summary>
+          <div class="details-body">
+            <table class="kv-table">
+              <tbody id="tech-tbody"></tbody>
+            </table>
+            <h3 style="margin: 14px 0 8px; font-size: 0.94rem; color: var(--sand);">Статистика сканирования (<code>stats</code>)</h3>
+            <table class="kv-table">
+              <tbody id="stats-tbody"></tbody>
+            </table>
+            <h3 style="margin: 14px 0 8px; font-size: 0.94rem; color: var(--sand);">Ограничения и предупреждения сканера (<code>issues</code>)</h3>
+            <div id="issues-list" class="issue-list"></div>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="info-columns" aria-label="Справочная информация">
+      <div class="info-box">
+        <h3>Особенности и ограничения Android</h3>
+        <ul>
+          <li><strong>Scoped Storage (Android 14+):</strong> каталоги <code>/Android/data</code> и <code>/Android/obb</code> закрыты системой для сторонних приложений без root/ADB — эти пропуски фиксируются в <code>issues</code>.</li>
+          <li><strong>Снапшоты и повторный запуск:</strong> при первом запуске создаётся базовый снапшот файлов; фиксация удалений и переименований за 15 минут работает при последующих проверках.</li>
+          <li><strong>Крупные файлы:</strong> файлы больше 64 МБ могут пропускаться сканером для экономии памяти.</li>
+        </ul>
+      </div>
+      <div class="info-box">
+        <h3>Граница доверия и интерпретация</h3>
+        <ul>
+          <li><strong>Что гарантирует подпись:</strong> Ed25519 подтверждает, что файл отчёта не редактировался вручную после генерации и подписан известным ключом Android-сборки.</li>
+          <li><strong>Ограничение клиентского ключа:</strong> ключ подписи встроен в приложение на устройстве и теоретически может быть извлечён из APK при реверс-инжиниринге.</li>
+          <li><strong>Ручной анализ:</strong> наличие или отсутствие находок не заменяет внимательную проверку путей, кода <code>challenge</code>, времени создания отчёта и раздела <code>issues</code>.</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      <div>Разработчик: <strong>AbsurdEar7658</strong> (IronMine)</div>
+      <div>Android · Minecraft Bedrock · Ed25519</div>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      /* =====================================================================
+       * КОНФИГУРАЦИЯ ДОВЕРЕННЫХ КЛЮЧЕЙ BEDROCKCHECK ANDROID
+       * ---------------------------------------------------------------------
+       * Замените заглушку ниже на реальный публичный ключ вашей Android-сборки:
+       *  - key_id: 16 hex-символов (нижний регистр), первые 8 байт SHA-256 от
+       *    сырого 32-байтного публичного ключа Ed25519.
+       *  - publicKeyB64: сырой 32-байтный публичный ключ Ed25519 в Base64.
+       * Вы можете хранить несколько ключей (для поддержки старых и новых версий).
+       * ===================================================================== */
+      const TRUSTED_ANDROID_KEYS = [
+        {
+          key_id: "0000000000000000",
+          publicKeyB64: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+          label: "Ключ-заглушка (замените на ключ Android-сборки)"
+        }
+      ];
+
+      const MAX_REPORT_BYTES = 16 * 1024 * 1024; // 16 MiB
+      const MAX_JSON_DEPTH = 64;
+      const ENVELOPE_FORMAT = "bedrock-check.ed25519.v1";
+      const SIGNATURE_DOMAIN_PREFIX = "BedrockCheck/report/v1\u0000";
+      const EXPECTED_DEVELOPER = "Developer: AbsurdEar7658";
+      const PAGE_SIZE = 100;
+      const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000; // 5 минут
+      const STALE_AGE_MS = 24 * 60 * 60 * 1000; // 24 часа
+
+      const textEncoder = new TextEncoder();
+
+      // DOM элементы
+      const envWarningEl = document.getElementById("env-warning");
+      const keyConfigWarningEl = document.getElementById("key-config-warning");
+      const fileInput = document.getElementById("file-input");
+      const dropzone = document.getElementById("dropzone");
+      const fileMetaEl = document.getElementById("file-meta");
+      const challengeInput = document.getElementById("challenge-input");
+      const reportTextarea = document.getElementById("report-text");
+      const verifyBtn = document.getElementById("verify-btn");
+      const clearBtn = document.getElementById("clear-btn");
+
+      const resultSection = document.getElementById("result-section");
+      const verdictBanner = document.getElementById("verdict-banner");
+      const verdictTitle = document.getElementById("verdict-title");
+      const verdictDesc = document.getElementById("verdict-desc");
+      const verdictWarnings = document.getElementById("verdict-warnings");
+      const verifiedContent = document.getElementById("verified-content");
+
+      const metaGrid = document.getElementById("meta-grid");
+      const recentChangesCard = document.getElementById("recent-changes-card");
+      const recentChangesBody = document.getElementById("recent-changes-body");
+      const findingsSearch = document.getElementById("findings-search");
+      const findingsCounter = document.getElementById("findings-counter");
+      const findingsList = document.getElementById("findings-list");
+      const findingsPagination = document.getElementById("findings-pagination");
+      const showMoreBtn = document.getElementById("show-more-btn");
+      const techTbody = document.getElementById("tech-tbody");
+      const statsTbody = document.getElementById("stats-tbody");
+      const issuesList = document.getElementById("issues-list");
+
+      let currentFindings = [];
+      let filteredFindings = [];
+      let visibleLimit = PAGE_SIZE;
+      let ed25519Supported = null;
+
+      /* =====================================================================
+       * СТРОГИЙ JSON-ПАРСЕР (RFC 8259)
+       * Запрещает дубликаты ключей в объектах и ограничивает глубину вложенности.
+       * ===================================================================== */
+      function parseJsonStrict(source, maxDepth) {
+        if (typeof source !== "string") {
+          throw new Error("Ожидалась строка JSON.");
+        }
+        const len = source.length;
+        let pos = 0;
+
+        function skipWs() {
+          while (pos < len) {
+            const c = source.charCodeAt(pos);
+            if (c === 0x20 || c === 0x09 || c === 0x0A || c === 0x0D) {
+              pos++;
+            } else {
+              break;
+            }
+          }
+        }
+
+        function parseString() {
+          if (source.charCodeAt(pos) !== 0x22) {
+            throw new Error("Ожидалась строка на позиции " + pos);
+          }
+          pos++;
+          let out = "";
+          let chunkStart = pos;
+          while (pos < len) {
+            const ch = source.charCodeAt(pos);
+            if (ch === 0x22) {
+              out += source.slice(chunkStart, pos);
+              pos++;
+              return out;
+            }
+            if (ch < 0x20) {
+              throw new Error("Неэкранированный управляющий символ в строке на позиции " + pos);
+            }
+            if (ch === 0x5C) { // '\'
+              out += source.slice(chunkStart, pos);
+              pos++;
+              if (pos >= len) {
+                throw new Error("Незавершённая escape-последовательность в строке");
+              }
+              const esc = source.charAt(pos);
+              pos++;
+              switch (esc) {
+                case '"': out += '"'; break;
+                case "\\": out += "\\"; break;
+                case "/": out += "/"; break;
+                case "b": out += "\b"; break;
+                case "f": out += "\f"; break;
+                case "n": out += "\n"; break;
+                case "r": out += "\r"; break;
+                case "t": out += "\t"; break;
+                case "u": {
+                  if (pos + 4 > len) {
+                    throw new Error("Неполная \\uXXXX последовательность на позиции " + pos);
+                  }
+                  const hex = source.slice(pos, pos + 4);
+                  if (!/^[0-9a-fA-F]{4}$/.test(hex)) {
+                    throw new Error("Некорректный hex в \\uXXXX на позиции " + pos);
+                  }
+                  out += String.fromCharCode(parseInt(hex, 16));
+                  pos += 4;
+                  break;
+                }
+                default:
+                  throw new Error("Недопустимый escape '\\" + esc + "' на позиции " + (pos - 1));
+              }
+              chunkStart = pos;
+            } else {
+              pos++;
+            }
+          }
+          throw new Error("Незакрытая строка JSON");
+        }
+
+        function parseNumber() {
+          const start = pos;
+          if (source.charCodeAt(pos) === 0x2D) pos++;
+          if (pos >= len) throw new Error("Некорректное число на позиции " + start);
+
+          if (source.charCodeAt(pos) === 0x30) {
+            pos++;
+            if (pos < len && source.charCodeAt(pos) >= 0x30 && source.charCodeAt(pos) <= 0x39) {
+              throw new Error("Ведущий ноль в числе на позиции " + start);
+            }
+          } else if (source.charCodeAt(pos) >= 0x31 && source.charCodeAt(pos) <= 0x39) {
+            while (pos < len && source.charCodeAt(pos) >= 0x30 && source.charCodeAt(pos) <= 0x39) {
+              pos++;
+            }
+          } else {
+            throw new Error("Некорректное число на позиции " + start);
+          }
+
+          if (pos < len && source.charCodeAt(pos) === 0x2E) {
+            pos++;
+            if (pos >= len || source.charCodeAt(pos) < 0x30 || source.charCodeAt(pos) > 0x39) {
+              throw new Error("Ожидались цифры после точки на позиции " + start);
+            }
+            while (pos < len && source.charCodeAt(pos) >= 0x30 && source.charCodeAt(pos) <= 0x39) {
+              pos++;
+            }
+          }
+
+          if (pos < len && (source.charCodeAt(pos) === 0x65 || source.charCodeAt(pos) === 0x45)) {
+            pos++;
+            if (pos < len && (source.charCodeAt(pos) === 0x2B || source.charCodeAt(pos) === 0x2D)) {
+              pos++;
+            }
+            if (pos >= len || source.charCodeAt(pos) < 0x30 || source.charCodeAt(pos) > 0x39) {
+              throw new Error("Ожидались цифры экспоненты на позиции " + start);
+            }
+            while (pos < len && source.charCodeAt(pos) >= 0x30 && source.charCodeAt(pos) <= 0x39) {
+              pos++;
+            }
+          }
+
+          const num = Number(source.slice(start, pos));
+          if (!Number.isFinite(num)) {
+            throw new Error("Число выходит за пределы допустимого диапазона");
+          }
+          return num;
+        }
+
+        function parseValue(depth) {
+          if (depth > maxDepth) {
+            throw new Error("Превышена максимальная глубина вложенности JSON (" + maxDepth + ")");
+          }
+          skipWs();
+          if (pos >= len) {
+            throw new Error("Неожиданный конец JSON");
+          }
+          const ch = source.charCodeAt(pos);
+          if (ch === 0x7B) return parseObject(depth);
+          if (ch === 0x5B) return parseArray(depth);
+          if (ch === 0x22) return parseString();
+          if (ch === 0x74) {
+            if (source.startsWith("true", pos)) { pos += 4; return true; }
+            throw new Error("Некорректный литерал на позиции " + pos);
+          }
+          if (ch === 0x66) {
+            if (source.startsWith("false", pos)) { pos += 5; return false; }
+            throw new Error("Некорректный литерал на позиции " + pos);
+          }
+          if (ch === 0x6E) {
+            if (source.startsWith("null", pos)) { pos += 4; return null; }
+            throw new Error("Некорректный литерал на позиции " + pos);
+          }
+          if (ch === 0x2D || (ch >= 0x30 && ch <= 0x39)) {
+            return parseNumber();
+          }
+          throw new Error("Неожиданный символ '" + source.charAt(pos) + "' на позиции " + pos);
+        }
+
+        function parseArray(depth) {
+          pos++; // '['
+          const arr = [];
+          skipWs();
+          if (pos < len && source.charCodeAt(pos) === 0x5D) {
+            pos++;
+            return arr;
+          }
+          while (true) {
+            arr.push(parseValue(depth + 1));
+            skipWs();
+            if (pos >= len) throw new Error("Незакрытый массив JSON");
+            const c = source.charCodeAt(pos);
+            if (c === 0x2C) {
+              pos++;
+            } else if (c === 0x5D) {
+              pos++;
+              return arr;
+            } else {
+              throw new Error("Ожидалась ',' или ']' на позиции " + pos);
+            }
+          }
+        }
+
+        function parseObject(depth) {
+          pos++; // '{'
+          const obj = {};
+          const seenKeys = new Set();
+          skipWs();
+          if (pos < len && source.charCodeAt(pos) === 0x7D) {
+            pos++;
+            return obj;
+          }
+          while (true) {
+            skipWs();
+            if (pos >= len || source.charCodeAt(pos) !== 0x22) {
+              throw new Error("Ожидалось имя ключа в кавычках на позиции " + pos);
+            }
+            const key = parseString();
+            if (seenKeys.has(key)) {
+              throw new Error("Обнаружен дубликат ключа JSON: \"" + key + "\"");
+            }
+            seenKeys.add(key);
+
+            skipWs();
+            if (pos >= len || source.charCodeAt(pos) !== 0x3A) {
+              throw new Error("Ожидалось ':' после ключа \"" + key + "\"");
+            }
+            pos++;
+
+            const value = parseValue(depth + 1);
+            Object.defineProperty(obj, key, {
+              value: value,
+              enumerable: true,
+              writable: true,
+              configurable: true
+            });
+
+            skipWs();
+            if (pos >= len) throw new Error("Незакрытый объект JSON");
+            const c = source.charCodeAt(pos);
+            if (c === 0x2C) {
+              pos++;
+            } else if (c === 0x7D) {
+              pos++;
+              return obj;
+            } else {
+              throw new Error("Ожидалась ',' или '}' на позиции " + pos);
+            }
+          }
+        }
+
+        const result = parseValue(1);
+        skipWs();
+        if (pos !== len) {
+          throw new Error("Лишние данные после завершения JSON на позиции " + pos);
+        }
+        return result;
+      }
+
+      /* =====================================================================
+       * КРИПТОГРАФИЧЕСКИЕ УТИЛИТЫ
+       * ===================================================================== */
+      function decodeBase64Strict(b64, expectedByteLength) {
+        if (typeof b64 !== "string" || b64.length === 0 || b64.length % 4 !== 0) {
+          throw new Error("Некорректная длина Base64.");
+        }
+        if (!/^[A-Za-z0-9+/]+={0,2}$/.test(b64)) {
+          throw new Error("Недопустимые символы в строке Base64.");
+        }
+        let binary;
+        try {
+          binary = atob(b64);
+        } catch (e) {
+          throw new Error("Ошибка декодирования Base64.");
+        }
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        if (typeof expectedByteLength === "number" && bytes.length !== expectedByteLength) {
+          throw new Error("Ожидалось " + expectedByteLength + " байт, получено " + bytes.length + ".");
+        }
+        return bytes;
+      }
+
+      function bytesToHexLower(bytes) {
+        let out = "";
+        for (let i = 0; i < bytes.length; i++) {
+          out += bytes[i].toString(16).padStart(2, "0");
+        }
+        return out;
+      }
+
+      async function computeKeyId(pubKeyBytes) {
+        const digest = await crypto.subtle.digest("SHA-256", pubKeyBytes);
+        return bytesToHexLower(new Uint8Array(digest).slice(0, 8));
+      }
+
+      async function checkWebCryptoEd25519Support() {
+        if (!window.crypto || !window.crypto.subtle) {
+          return {
+            ok: false,
+            reason: "Web Crypto API недоступен в текущем контексте. Откройте страницу по HTTPS (например, на GitHub Pages)."
+          };
+        }
+        try {
+          const probeKey = new Uint8Array(32);
+          probeKey[0] = 1;
+          await crypto.subtle.importKey("raw", probeKey, { name: "Ed25519" }, false, ["verify"]);
+          return { ok: true };
+        } catch (err) {
+          return {
+            ok: false,
+            reason: "Ваш браузер не поддерживает алгоритм Ed25519 в Web Crypto API. Обновите Chrome/Edge (113+), Firefox (129+) или Safari (17+)."
+          };
+        }
+      }
+
+      function isPlainObject(val) {
+        return val !== null && typeof val === "object" && !Array.isArray(val);
+      }
+
+      function hasPlaceholderOnlyKeys() {
+        return TRUSTED_ANDROID_KEYS.every(
+          (k) => k.key_id === "0000000000000000" && k.publicKeyB64 === "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+        );
+      }
+
+      /* =====================================================================
+       * ФОРМАТИРОВАНИЕ И БЕЗОПАСНЫЙ РЕНДЕРИНГ DOM
+       * ===================================================================== */
+      function clearEl(el) {
+        while (el.firstChild) {
+          el.removeChild(el.firstChild);
+        }
+      }
+
+      function createEl(tag, className, text) {
+        const el = document.createElement(tag);
+        if (className) el.className = className;
+        if (text !== undefined && text !== null) el.textContent = String(text);
+        return el;
+      }
+
+      function translateScanStatus(status) {
+        switch (status) {
+          case "completed": return { label: "Завершена (completed)", cls: "ok" };
+          case "partial": return { label: "Частичная (partial)", cls: "warn" };
+          case "cancelled": return { label: "Отменена (cancelled)", cls: "warn" };
+          case "failed": return { label: "Ошибка (failed)", cls: "err" };
+          default: return { label: String(status), cls: "err" };
+        }
+      }
+
+      function evaluateTimestamp(createdAtStr) {
+        if (typeof createdAtStr !== "string" || !createdAtStr.trim()) {
+          return { valid: false, warning: "Дата создания отчёта (created_at) отсутствует.", formatted: "—" };
+        }
+        const ts = Date.parse(createdAtStr);
+        if (Number.isNaN(ts)) {
+          return { valid: false, warning: "Некорректный формат даты created_at: " + createdAtStr, formatted: createdAtStr };
+        }
+        const d = new Date(ts);
+        const now = Date.now();
+        const localStr = d.toLocaleString("ru-RU", {
+          year: "numeric", month: "2-digit", day: "2-digit",
+          hour: "2-digit", minute: "2-digit", second: "2-digit"
+        });
+        const utcStr = d.toISOString().replace("T", " ").replace(/\.\d+Z$/, " UTC");
+
+        let warning = null;
+        if (ts - now > MAX_FUTURE_SKEW_MS) {
+          warning = "Дата отчёта опережает текущее время более чем на 5 минут (возможно, сбиты часы на устройстве или использован старый/подменённый отчёт).";
+        } else if (now - ts > STALE_AGE_MS) {
+          const hours = Math.floor((now - ts) / (60 * 60 * 1000));
+          warning = "Отчёт старше 24 часов (возраст: ~" + hours + " ч). Убедитесь, что проверяете актуальный сеанс.";
+        }
+
+        return {
+          valid: true,
+          warning: warning,
+          formatted: localStr,
+          utc: utcStr
+        };
+      }
+
+      function showVerdict(mode, title, description, warnings) {
+        resultSection.classList.remove("hidden");
+        verdictBanner.className = "verdict-banner " + mode;
+        verdictTitle.textContent = title;
+        verdictDesc.textContent = description;
+
+        clearEl(verdictWarnings);
+        if (warnings && warnings.length > 0) {
+          verdictWarnings.classList.remove("hidden");
+          for (const w of warnings) {
+            verdictWarnings.appendChild(createEl("div", "warning-item", w));
+          }
+        } else {
+          verdictWarnings.classList.add("hidden");
+        }
+      }
+
+      function renderMetaCards(payload, envelope, expectedChallenge, timeInfo, challengeStatus) {
+        clearEl(metaGrid);
+
+        function addCard(label, value, subText, badgeObj) {
+          const card = createEl("div", "meta-card");
+          card.appendChild(createEl("div", "meta-label", label));
+          card.appendChild(createEl("div", "meta-value", value));
+          if (badgeObj) {
+            const wrap = createEl("div", "meta-sub");
+            wrap.appendChild(createEl("span", "badge " + badgeObj.cls, badgeObj.text));
+            card.appendChild(wrap);
+          }
+          if (subText) {
+            card.appendChild(createEl("div", "meta-sub", subText));
+          }
+          metaGrid.appendChild(card);
+        }
+
+        addCard("Устройство", payload.pc_name || "Не указано", "Android-устройство и версия ОС");
+
+        addCard(
+          "Дата и время",
+          timeInfo.formatted,
+          timeInfo.utc || null,
+          timeInfo.warning
+            ? { cls: "warn", text: "Требует внимания" }
+            : { cls: "ok", text: "Актуально (< 24 ч)" }
+        );
+
+        const st = translateScanStatus(payload.scan.status);
+        addCard("Состояние проверки", st.label, null, { cls: st.cls, text: payload.scan.status });
+
+        const findingsCount = payload.scan.findings.length;
+        addCard(
+          "Найдено индикаторов",
+          String(findingsCount),
+          findingsCount === 0 ? "Индикаторы не обнаружены" : "Требует ручной оценки",
+          findingsCount === 0 ? { cls: "ok", text: "0 находок" } : { cls: "warn", text: findingsCount + " шт." }
+        );
+
+        let chBadge;
+        if (challengeStatus === "match") {
+          chBadge = { cls: "ok", text: "Совпадает с ожидаемым" };
+        } else if (challengeStatus === "mismatch") {
+          chBadge = { cls: "err", text: "НЕ СОВПАДАЕТ!" };
+        } else {
+          chBadge = { cls: "neutral", text: "Ожидаемый код не задан" };
+        }
+        addCard(
+          "Код проверки (challenge)",
+          payload.challenge || "—",
+          expectedChallenge ? "Ожидался: " + expectedChallenge : "Введите ожидаемый код выше для сверки сеанса",
+          chBadge
+        );
+
+        const devOk = payload.developer === EXPECTED_DEVELOPER;
+        addCard(
+          "Версия приложения",
+          payload.app_version || "—",
+          payload.developer || "developer не указан",
+          devOk ? { cls: "ok", text: "Разработчик подтверждён" } : { cls: "warn", text: "Нестандартное поле developer" }
+        );
+      }
+
+      function renderRecentChanges(recentChanges) {
+        clearEl(recentChangesBody);
+        if (!recentChanges || !isPlainObject(recentChanges)) {
+          recentChangesCard.classList.add("hidden");
+          return;
+        }
+
+        recentChangesCard.classList.remove("hidden");
+
+        const metaParts = [];
+        if (recentChanges.window_minutes !== undefined) {
+          metaParts.push("Окно наблюдения: " + recentChanges.window_minutes + " мин");
+        } else if (recentChanges.windowMinutes !== undefined) {
+          metaParts.push("Окно наблюдения: " + recentChanges.windowMinutes + " мин");
+        }
+        if (recentChanges.baseline_created === true || recentChanges.is_baseline === true) {
+          metaParts.push("Создан базовый снапшот (первый запуск)");
+        }
+        if (typeof recentChanges.summary === "string" && recentChanges.summary.trim()) {
+          metaParts.push(recentChanges.summary);
+        }
+
+        if (metaParts.length > 0) {
+          recentChangesBody.appendChild(createEl("p", "subtitle", metaParts.join(" · ")));
+        }
+
+        const collected = [];
+        const bucketMap = [
+          { key: "events", defaultType: "событие" },
+          { key: "changes", defaultType: "изменение" },
+          { key: "items", defaultType: "событие" },
+          { key: "modified", defaultType: "изменён" },
+          { key: "deleted", defaultType: "удалён" },
+          { key: "renamed", defaultType: "переименован" },
+          { key: "created", defaultType: "создан" },
+          { key: "added", defaultType: "добавлен" }
+        ];
+
+        for (const bucket of bucketMap) {
+          const val = recentChanges[bucket.key];
+          if (Array.isArray(val)) {
+            for (const item of val) {
+              collected.push({ item: item, fallbackType: bucket.defaultType });
+            }
+          }
+        }
+
+        // Если встречаются нестандартные массивы в recent_changes
+        if (collected.length === 0) {
+          for (const [k, v] of Object.entries(recentChanges)) {
+            if (Array.isArray(v)) {
+              for (const item of v) {
+                collected.push({ item: item, fallbackType: k });
+              }
+            }
+          }
+        }
+
+        if (collected.length === 0) {
+          // Выведем числовые/строковые счётчики, если есть
+          const table = createEl("table", "kv-table");
+          const tbody = createEl("tbody");
+          let rows = 0;
+          for (const [k, v] of Object.entries(recentChanges)) {
+            if (!isPlainObject(v) && !Array.isArray(v)) {
+              const tr = createEl("tr");
+              tr.appendChild(createEl("th", null, k));
+              tr.appendChild(createEl("td", null, String(v)));
+              tbody.appendChild(tr);
+              rows++;
+            }
+          }
+          if (rows > 0) {
+            table.appendChild(tbody);
+            recentChangesBody.appendChild(table);
+          }
+          recentChangesBody.appendChild(
+            createEl("div", "issue-msg", "Зафиксированных событий изменения, удаления или переименования за 15 минут нет.")
+          );
+          return;
+        }
+
+        const list = createEl("div", "issue-list");
+        for (const entry of collected) {
+          const row = createEl("div", "issue-item");
+          const it = entry.item;
+          if (typeof it === "string") {
+            row.appendChild(createEl("div", "issue-path", "[" + entry.fallbackType + "] " + it));
+          } else if (isPlainObject(it)) {
+            const typeText = it.type || it.action || it.kind || it.event || entry.fallbackType;
+            const pathText = it.path || it.new_path || it.target || "";
+            const oldPath = it.old_path || it.from || "";
+            const titleLine = oldPath && pathText
+              ? "[" + typeText + "] " + oldPath + " → " + pathText
+              : "[" + typeText + "] " + (pathText || JSON.stringify(it));
+            row.appendChild(createEl("div", "issue-path", titleLine));
+
+            const extra = [];
+            if (it.timestamp || it.time || it.at) extra.push("время: " + (it.timestamp || it.time || it.at));
+            if (it.detail || it.message) extra.push(it.detail || it.message);
+            if (extra.length > 0) {
+              row.appendChild(createEl("div", "issue-msg", extra.join(" · ")));
+            }
+          } else {
+            row.appendChild(createEl("div", "issue-msg", String(it)));
+          }
+          list.appendChild(row);
+        }
+        recentChangesBody.appendChild(list);
+      }
+
+      function applyFindingsFilter(resetLimit) {
+        if (resetLimit) {
+          visibleLimit = PAGE_SIZE;
+        }
+        const query = findingsSearch.value.trim().toLowerCase();
+        if (!query) {
+          filteredFindings = currentFindings;
+        } else {
+          filteredFindings = currentFindings.filter((f) => {
+            const parts = [
+              f.category || "",
+              f.path || "",
+              f.source || "",
+              f.detail || "",
+              Array.isArray(f.keywords) ? f.keywords.join(" ") : ""
+            ];
+            return parts.join("\n").toLowerCase().includes(query);
+          });
+        }
+        renderFindingsList();
+      }
+
+      function renderFindingsList() {
+        clearEl(findingsList);
+        const total = currentFindings.length;
+        const matched = filteredFindings.length;
+        const shown = Math.min(visibleLimit, matched);
+
+        findingsCounter.textContent = total === matched
+          ? "Показано " + shown + " из " + total
+          : "Найдено по фильтру: " + matched + " (всего " + total + "), показано " + shown;
+
+        if (matched === 0) {
+          findingsList.appendChild(
+            createEl("div", "issue-msg", total === 0
+              ? "В отчёте нет находок (findings пуст)."
+              : "По заданному фильтру ничего не найдено.")
+          );
+          findingsPagination.classList.add("hidden");
+          return;
+        }
+
+        const slice = filteredFindings.slice(0, shown);
+        for (const f of slice) {
+          const item = createEl("div", "finding-item");
+
+          const head = createEl("div", "finding-head");
+          head.appendChild(createEl("span", "badge warn", f.category || "без категории"));
+          if (f.confidence !== undefined && f.confidence !== null && f.confidence !== "") {
+            head.appendChild(createEl("span", "badge neutral", "уверенность: " + f.confidence));
+          }
+          if (f.source) {
+            head.appendChild(createEl("span", "badge neutral", "источник: " + f.source));
+          }
+          item.appendChild(head);
+
+          if (f.path) {
+            item.appendChild(createEl("div", "finding-path", f.path));
+          }
+          if (f.detail) {
+            item.appendChild(createEl("div", "finding-detail", f.detail));
+          }
+          if (Array.isArray(f.keywords) && f.keywords.length > 0) {
+            const kwList = createEl("div", "kw-list");
+            for (const kw of f.keywords) {
+              kwList.appendChild(createEl("span", "kw-tag", String(kw)));
+            }
+            item.appendChild(kwList);
+          }
+
+          findingsList.appendChild(item);
+        }
+
+        const remaining = matched - shown;
+        if (remaining > 0) {
+          findingsPagination.classList.remove("hidden");
+          const step = Math.min(PAGE_SIZE, remaining);
+          showMoreBtn.textContent = "Показать ещё " + step + " (осталось " + remaining + ")";
+        } else {
+          findingsPagination.classList.add("hidden");
+        }
+      }
+
+      function renderScopeAndIssues(payload, envelope, trustedKeyLabel) {
+        clearEl(techTbody);
+        clearEl(statsTbody);
+        clearEl(issuesList);
+
+        const techRows = [
+          ["report_id", payload.report_id || "—"],
+          ["schema_version", String(payload.schema_version)],
+          ["format", envelope.format],
+          ["key_id", envelope.key_id + (trustedKeyLabel ? " (" + trustedKeyLabel + ")" : "")],
+          ["developer", payload.developer || "—"]
+        ];
+        for (const [k, v] of techRows) {
+          const tr = createEl("tr");
+          tr.appendChild(createEl("th", null, k));
+          tr.appendChild(createEl("td", null, v));
+          techTbody.appendChild(tr);
+        }
+
+        if (isPlainObject(payload.scan.stats) && Object.keys(payload.scan.stats).length > 0) {
+          for (const [k, v] of Object.entries(payload.scan.stats)) {
+            const tr = createEl("tr");
+            tr.appendChild(createEl("th", null, k));
+            tr.appendChild(createEl("td", null, isPlainObject(v) || Array.isArray(v) ? JSON.stringify(v) : String(v)));
+            statsTbody.appendChild(tr);
+          }
+        } else {
+          const tr = createEl("tr");
+          tr.appendChild(createEl("th", null, "Статистика"));
+          tr.appendChild(createEl("td", null, "Не передана в отчёте"));
+          statsTbody.appendChild(tr);
+        }
+
+        const issues = Array.isArray(payload.scan.issues) ? payload.scan.issues : [];
+        if (issues.length === 0) {
+          issuesList.appendChild(createEl("div", "issue-msg", "Ограничения и ошибки доступа при сканировании не зафиксированы."));
+        } else {
+          for (const iss of issues) {
+            const box = createEl("div", "issue-item");
+            if (isPlainObject(iss)) {
+              box.appendChild(createEl("div", "issue-path", iss.path || "—"));
+              box.appendChild(createEl("div", "issue-msg", iss.message || "—"));
+            } else {
+              box.appendChild(createEl("div", "issue-msg", String(iss)));
+            }
+            issuesList.appendChild(box);
+          }
+        }
+      }
+
+      /* =====================================================================
+       * ВАЛИДАЦИЯ СХЕМЫ И ПРОВЕРКА ПОДПИСИ
+       * ===================================================================== */
+      function validateEnvelopeStructure(env) {
+        if (!isPlainObject(env)) {
+          throw new Error("Корневой элемент JSON должен быть объектом.");
+        }
+        const keys = Object.keys(env);
+        const expected = ["format", "key_id", "payload", "Signature"];
+        if (keys.length !== 4 || !expected.every((k) => Object.prototype.hasOwnProperty.call(env, k))) {
+          throw new Error("Конверт должен содержать ровно 4 ключа: format, key_id, payload, Signature.");
+        }
+        if (env.format !== ENVELOPE_FORMAT) {
+          throw new Error("Неподдерживаемый формат конверта: ожидался \"" + ENVELOPE_FORMAT + "\".");
+        }
+        if (typeof env.key_id !== "string" || !/^[0-9a-f]{16}$/.test(env.key_id)) {
+          throw new Error("Некорректный key_id: ожидалась строка из 16 hex-символов в нижнем регистре.");
+        }
+        if (typeof env.payload !== "string") {
+          throw new Error("Поле payload в конверте должно быть строкой.");
+        }
+        if (typeof env.Signature !== "string") {
+          throw new Error("Поле Signature в конверте должно быть строкой Base64.");
+        }
+      }
+
+      function validateAndroidPayload(payload) {
+        if (!isPlainObject(payload)) {
+          throw new Error("Полезная нагрузка payload должна быть JSON-объектом.");
+        }
+        if (payload.schema_version !== 1) {
+          throw new Error("Неподдерживаемая schema_version: ожидалось значение 1.");
+        }
+        const requiredStrings = ["created_at", "pc_name", "developer", "report_id", "app_version", "challenge"];
+        for (const field of requiredStrings) {
+          if (typeof payload[field] !== "string") {
+            throw new Error("Поле payload." + field + " должно быть строкой.");
+          }
+        }
+        if (!isPlainObject(payload.scan)) {
+          throw new Error("Поле payload.scan должно быть объектом.");
+        }
+        const validStatuses = new Set(["completed", "partial", "cancelled", "failed"]);
+        if (!validStatuses.has(payload.scan.status)) {
+          throw new Error("Некорректный payload.scan.status: " + String(payload.scan.status));
+        }
+        if (!Array.isArray(payload.scan.findings)) {
+          throw new Error("Поле payload.scan.findings должно быть массивом.");
+        }
+        if (payload.scan.issues !== undefined && !Array.isArray(payload.scan.issues)) {
+          throw new Error("Поле payload.scan.issues должно быть массивом.");
+        }
+        if (payload.scan.stats !== undefined && !isPlainObject(payload.scan.stats)) {
+          throw new Error("Поле payload.scan.stats должно быть объектом.");
+        }
+        if (payload.scan.recent_changes !== undefined && !isPlainObject(payload.scan.recent_changes)) {
+          throw new Error("Поле payload.scan.recent_changes должно быть объектом.");
+        }
+      }
+
+      async function verifyReport() {
+        verifiedContent.classList.add("hidden");
+
+        if (ed25519Supported === false) {
+          showVerdict(
+            "unavailable",
+            "ПРОВЕРКА НЕДОСТУПНА",
+            "Текущий браузер или контекст не поддерживает проверку Ed25519 через Web Crypto API.",
+            []
+          );
+          return;
+        }
+
+        const rawText = reportTextarea.value.trim();
+        if (!rawText) {
+          showVerdict(
+            "invalid",
+            "ВНИМАНИЕ: ОТЧЕТ НЕ ЗАГРУЖЕН",
+            "Вставьте текст JSON-отчёта или выберите файл report_android_*.json.",
+            []
+          );
+          return;
+        }
+
+        const byteLen = textEncoder.encode(rawText).length;
+        if (byteLen > MAX_REPORT_BYTES) {
+          showVerdict(
+            "invalid",
+            "ВНИМАНИЕ: ОТЧЕТ ПОДДЕЛАН ИЛИ ИЗМЕНЕН!",
+            "Размер файла превышает допустимый лимит в 16 МиБ.",
+            []
+          );
+          return;
+        }
+
+        // 1. Строгий разбор внешнего конверта
+        let envelope;
+        try {
+          envelope = parseJsonStrict(rawText, MAX_JSON_DEPTH);
+          validateEnvelopeStructure(envelope);
+        } catch (err) {
+          showVerdict(
+            "invalid",
+            "ВНИМАНИЕ: ОТЧЕТ ПОДДЕЛАН ИЛИ ИЗМЕНЕН!",
+            "Нарушен формат конверта или структура JSON: " + err.message,
+            []
+          );
+          return;
+        }
+
+        // 2. Поиск доверенного ключа Android по key_id
+        const keyEntry = TRUSTED_ANDROID_KEYS.find((k) => k.key_id === envelope.key_id);
+        if (!keyEntry) {
+          showVerdict(
+            "invalid",
+            "ВНИМАНИЕ: ОТЧЕТ ПОДДЕЛАН ИЛИ ИЗМЕНЕН!",
+            "Ключ с идентификатором key_id \"" + envelope.key_id + "\" отсутствует в списке доверенных ключей Android-сборки.",
+            []
+          );
+          return;
+        }
+
+        // 3. Декодирование ключа и подписи + проверка соответствия key_id == SHA-256(pubKey)[0..8]
+        let pubKeyBytes;
+        let signatureBytes;
+        try {
+          pubKeyBytes = decodeBase64Strict(keyEntry.publicKeyB64, 32);
+          const computedId = await computeKeyId(pubKeyBytes);
+          if (computedId !== keyEntry.key_id) {
+            showVerdict(
+              "unavailable",
+              "ПРОВЕРКА НЕДОСТУПНА",
+              "Ошибка конфигурации: key_id (" + keyEntry.key_id + ") не совпадает с SHA-256 публичного ключа (" + computedId + ").",
+              []
+            );
+            return;
+          }
+          signatureBytes = decodeBase64Strict(envelope.Signature, 64);
+        } catch (err) {
+          showVerdict(
+            "invalid",
+            "ВНИМАНИЕ: ОТЧЕТ ПОДДЕЛАН ИЛИ ИЗМЕНЕН!",
+            "Некорректная подпись или данные ключа: " + err.message,
+            []
+          );
+          return;
+        }
+
+        // 4. Криптографическая проверка Ed25519 по точному доменному сообщению
+        let isSignatureValid = false;
+        try {
+          const cryptoKey = await crypto.subtle.importKey(
+            "raw",
+            pubKeyBytes,
+            { name: "Ed25519" },
+            false,
+            ["verify"]
+          );
+          const messageBytes = textEncoder.encode(SIGNATURE_DOMAIN_PREFIX + envelope.payload);
+          isSignatureValid = await crypto.subtle.verify(
+            { name: "Ed25519" },
+            cryptoKey,
+            signatureBytes,
+            messageBytes
+          );
+        } catch (err) {
+          showVerdict(
+            "unavailable",
+            "ПРОВЕРКА НЕДОСТУПНА",
+            "Сбой Web Crypto API при проверке Ed25519: " + err.message,
+            []
+          );
+          return;
+        }
+
+        if (!isSignatureValid) {
+          showVerdict(
+            "invalid",
+            "ВНИМАНИЕ: ОТЧЕТ ПОДДЕЛАН ИЛИ ИЗМЕНЕН!",
+            "Цифровая подпись Ed25519 не прошла проверку. Содержимое отчёта было изменено после подписи или подписано чужим ключом.",
+            []
+          );
+          return;
+        }
+
+        // 5. Строгий разбор и валидация полезной нагрузки payload
+        let payload;
+        try {
+          payload = parseJsonStrict(envelope.payload, MAX_JSON_DEPTH);
+          validateAndroidPayload(payload);
+        } catch (err) {
+          showVerdict(
+            "invalid",
+            "ВНИМАНИЕ: ОТЧЕТ ПОДДЕЛАН ИЛИ ИЗМЕНЕН!",
+            "Подпись валидна, но содержимое payload не соответствует схеме Android-отчёта: " + err.message,
+            []
+          );
+          return;
+        }
+
+        // 6. Проверки сеанса, даты и метаданных
+        const warnings = [];
+        const expectedChallenge = challengeInput.value.trim();
+        let challengeStatus = "unchecked";
+        if (expectedChallenge) {
+          if (payload.challenge === expectedChallenge) {
+            challengeStatus = "match";
+          } else {
+            challengeStatus = "mismatch";
+            warnings.push(
+              "Код проверки (challenge) НЕ СОВПАДАЕТ! Ожидалось \"" + expectedChallenge +
+              "\", в отчёте \"" + payload.challenge + "\". Возможно, предъявлен старый или чужой отчёт."
+            );
+          }
+        }
+
+        const timeInfo = evaluateTimestamp(payload.created_at);
+        if (timeInfo.warning) {
+          warnings.push(timeInfo.warning);
+        }
+
+        if (payload.developer !== EXPECTED_DEVELOPER) {
+          warnings.push("Поле developer отличается от ожидаемого (\"" + payload.developer + "\").");
+        }
+
+        if (payload.scan.status !== "completed") {
+          warnings.push("Проверка завершилась со статусом \"" + payload.scan.status + "\" — часть данных может отсутствовать.");
+        }
+
+        const verdictDescText = warnings.length === 0
+          ? "Подпись Ed25519 действительна, структура отчёта корректна, предупреждений по сеансу нет."
+          : "Подпись Ed25519 действительна (файл не изменялся), однако обратите внимание на предупреждения ниже.";
+
+        showVerdict("valid", "ОТЧЕТ ПОДЛИННЫЙ", verdictDescText, warnings);
+
+        // 7. Отрисовка данных отчёта
+        renderMetaCards(payload, envelope, expectedChallenge, timeInfo, challengeStatus);
+        renderRecentChanges(payload.scan.recent_changes);
+
+        currentFindings = payload.scan.findings;
+        findingsSearch.value = "";
+        applyFindingsFilter(true);
+
+        renderScopeAndIssues(payload, envelope, keyEntry.label);
+        verifiedContent.classList.remove("hidden");
+      }
+
+      /* =====================================================================
+       * ОБРАБОТЧИКИ СОБЫТИЙ
+       * ===================================================================== */
+      function handleFile(file) {
+        if (!file) return;
+        if (file.size > MAX_REPORT_BYTES) {
+          fileMetaEl.textContent = "";
+          showVerdict(
+            "invalid",
+            "ВНИМАНИЕ: ОТЧЕТ ПОДДЕЛАН ИЛИ ИЗМЕНЕН!",
+            "Выбранный файл превышает лимит 16 МиБ (" + (file.size / (1024 * 1024)).toFixed(2) + " МиБ).",
+            []
+          );
+          verifiedContent.classList.add("hidden");
+          return;
+        }
+        fileMetaEl.textContent = file.name + " (" + Math.max(1, Math.round(file.size / 1024)) + " КБ)";
+        const reader = new FileReader();
+        reader.onload = function () {
+          reportTextarea.value = typeof reader.result === "string" ? reader.result : "";
+          verifyReport();
+        };
+        reader.onerror = function () {
+          showVerdict("invalid", "ОШИБКА ЧТЕНИЯ ФАЙЛА", "Не удалось прочитать выбранный файл.", []);
+        };
+        reader.readAsText(file, "UTF-8");
+      }
+
+      fileInput.addEventListener("change", function () {
+        if (fileInput.files && fileInput.files[0]) {
+          handleFile(fileInput.files[0]);
+        }
+      });
+
+      dropzone.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        dropzone.classList.add("drag-over");
+      });
+
+      dropzone.addEventListener("dragleave", function () {
+        dropzone.classList.remove("drag-over");
+      });
+
+      dropzone.addEventListener("drop", function (e) {
+        e.preventDefault();
+        dropzone.classList.remove("drag-over");
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+          handleFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      verifyBtn.addEventListener("click", verifyReport);
+
+      clearBtn.addEventListener("click", function () {
+        fileInput.value = "";
+        fileMetaEl.textContent = "";
+        challengeInput.value = "";
+        reportTextarea.value = "";
+        findingsSearch.value = "";
+        currentFindings = [];
+        filteredFindings = [];
+        resultSection.classList.add("hidden");
+        verifiedContent.classList.add("hidden");
+      });
+
+      findingsSearch.addEventListener("input", function () {
+        applyFindingsFilter(true);
+      });
+
+      showMoreBtn.addEventListener("click", function () {
+        visibleLimit += PAGE_SIZE;
+        renderFindingsList();
+      });
+
+      // Инициализация
+      (async function init() {
+        const support = await checkWebCryptoEd25519Support();
+        ed25519Supported = support.ok;
+        if (!support.ok) {
+          envWarningEl.textContent = "ПРОВЕРКА НЕДОСТУПНА: " + support.reason;
+          envWarningEl.classList.remove("hidden");
+        }
+        if (hasPlaceholderOnlyKeys()) {
+          keyConfigWarningEl.textContent =
+            "Настройка верификатора: в массиве TRUSTED_ANDROID_KEYS внутри index.html всё ещё указан тестовый ключ-заглушка. Подставьте реальные key_id и publicKeyB64 вашей Android-сборки перед использованием в продакшене.";
+          keyConfigWarningEl.classList.remove("hidden");
+        }
+      })();
+    })();
+  </script>
+</body>
+</html>
